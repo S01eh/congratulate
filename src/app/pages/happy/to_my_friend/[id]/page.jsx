@@ -2,13 +2,79 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Rubik } from "next/font/google";
+
+const rubik = Rubik({
+  subsets: ["latin", "cyrillic", "cyrillic-ext"],
+  weight: ["400", "500", "700", "800"],
+});
+
+// Balloons rest at the edges so they never cover the text
+const BALLOONS = [
+  { x: "4%", y: "10%", s: 78, c: ["#ff8fa3", "#e5384f"], d: 0.2, sway: 5.5 },
+  { x: "15%", y: "46%", s: 60, c: ["#ffe08a", "#f5a623"], d: 0.6, sway: 6.5 },
+  { x: "6%", y: "70%", s: 70, c: ["#8ff0c0", "#1fb978"], d: 1.0, sway: 5 },
+  { x: "84%", y: "8%", s: 66, c: ["#9fd4ff", "#3b8be8"], d: 0.4, sway: 6 },
+  { x: "92%", y: "42%", s: 80, c: ["#d2b6ff", "#8a5bf0"], d: 0.8, sway: 7 },
+  { x: "80%", y: "68%", s: 58, c: ["#ffb3d9", "#e0489b"], d: 1.2, sway: 5.8 },
+];
+
+const CONFETTI_COLORS = ["#ff8fa3", "#ffe08a", "#8ff0c0", "#9fd4ff", "#d2b6ff"];
+
+function Balloon({ x, y, s, c, d, sway, id }) {
+  return (
+    <div
+      className="balloon-rise absolute"
+      style={{ left: x, top: y, width: s, animationDelay: `${d}s` }}
+    >
+      <div
+        className="balloon-sway"
+        style={{ animationDuration: `${sway}s`, animationDelay: `${d}s` }}
+      >
+        <svg viewBox="0 0 60 110" width="100%" aria-hidden="true">
+          <defs>
+            <radialGradient id={`b${id}`} cx="35%" cy="30%" r="75%">
+              <stop offset="0%" stopColor={c[0]} />
+              <stop offset="100%" stopColor={c[1]} />
+            </radialGradient>
+          </defs>
+          {/* string */}
+          <path
+            d="M30 78 C24 90, 36 98, 30 110"
+            fill="none"
+            stroke="rgba(255,255,255,0.55)"
+            strokeWidth="1"
+          />
+          {/* body */}
+          <path
+            d="M30 2 C10 2 2 20 2 36 C2 56 18 72 30 76 C42 72 58 56 58 36 C58 20 50 2 30 2 Z"
+            fill={`url(#b${id})`}
+          />
+          {/* knot */}
+          <path d="M30 75 L25 82 L35 82 Z" fill={c[1]} />
+          {/* highlight */}
+          <ellipse
+            cx="19"
+            cy="20"
+            rx="5"
+            ry="9"
+            fill="white"
+            opacity="0.45"
+            transform="rotate(25 19 20)"
+          />
+        </svg>
+      </div>
+    </div>
+  );
+}
 
 export default function BirthdayPage() {
   const [showContent, setShowContent] = useState(false);
-  const router = useRouter()
+  const [confetti, setConfetti] = useState([]);
+  const router = useRouter();
   const pathname = usePathname();
   const parts = pathname.split("/");
-  const name = parts[parts.length - 1];
+  const name = decodeURIComponent(parts[parts.length - 1] || "");
 
   useEffect(() => {
     if (localStorage.getItem("used")) {
@@ -16,358 +82,140 @@ export default function BirthdayPage() {
     } else {
       localStorage.setItem("used", "used_once");
     }
-    const timer = setTimeout(() => setShowContent(true), 500);
+
+    // Random values are created on the client only, so there is no hydration mismatch
+    setConfetti(
+      Array.from({ length: 36 }).map((_, i) => ({
+        left: Math.random() * 100,
+        size: 6 + Math.random() * 8,
+        delay: Math.random() * 8,
+        duration: 7 + Math.random() * 6,
+        color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+        round: i % 3 === 0,
+      }))
+    );
+
+    const timer = setTimeout(() => setShowContent(true), 300);
     return () => clearTimeout(timer);
   }, []);
 
+  const reveal = (delay) =>
+    showContent ? { animation: `reveal 1s cubic-bezier(.2,.8,.2,1) ${delay}s both` } : { opacity: 0 };
+
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-pink-400 via-purple-500 to-indigo-600">
-      {/* Animated Background Shapes */}
-      <div className="absolute inset-0">
-        {/* Floating Balloons */}
-        <div
-          className="absolute top-10 left-10 w-8 h-12 bg-gradient-to-b from-red-400 to-red-600 rounded-full animate-bounce"
-          style={{ animationDelay: "0s", animationDuration: "3s" }}
-        >
-          <div className="w-1 h-6 bg-gray-600 mx-auto"></div>
-        </div>
-        <div
-          className="absolute top-20 right-16 w-10 h-14 bg-gradient-to-b from-blue-400 to-blue-600 rounded-full animate-bounce"
-          style={{ animationDelay: "1s", animationDuration: "2.5s" }}
-        >
-          <div className="w-1 h-8 bg-gray-600 mx-auto"></div>
-        </div>
-        <div
-          className="absolute top-32 left-1/4 w-6 h-10 bg-gradient-to-b from-yellow-400 to-yellow-600 rounded-full animate-bounce"
-          style={{ animationDelay: "2s", animationDuration: "3.5s" }}
-        >
-          <div className="w-1 h-5 bg-gray-600 mx-auto"></div>
-        </div>
-        <div
-          className="absolute top-16 right-1/3 w-9 h-13 bg-gradient-to-b from-green-400 to-green-600 rounded-full animate-bounce"
-          style={{ animationDelay: "0.5s", animationDuration: "2.8s" }}
-        >
-          <div className="w-1 h-7 bg-gray-600 mx-auto"></div>
-        </div>
+    <div
+      className={`${rubik.className} relative min-h-screen overflow-hidden text-white`}
+      style={{
+        background:
+          "radial-gradient(1200px 700px at 50% 35%, #3a2a7a 0%, #1d1448 45%, #100b2b 100%)",
+      }}
+    >
+      {/* Soft glow orbs */}
+      <div className="pointer-events-none absolute -left-24 top-1/4 h-80 w-80 rounded-full bg-pink-500/25 blur-3xl" />
+      <div className="pointer-events-none absolute -right-24 bottom-1/4 h-80 w-80 rounded-full bg-sky-400/20 blur-3xl" />
 
-        {/* Pulsing Confetti Pieces */}
-        <div
-          className="absolute top-1/4 left-1/5 w-3 h-3 bg-pink-500 rotate-45 animate-pulse"
-          style={{ animationDelay: "0s" }}
-        ></div>
-        <div
-          className="absolute top-1/3 right-1/4 w-2 h-6 bg-yellow-400 animate-pulse"
-          style={{ animationDelay: "1s" }}
-        ></div>
-        <div
-          className="absolute top-1/2 left-1/6 w-4 h-2 bg-blue-500 animate-pulse"
-          style={{ animationDelay: "2s" }}
-        ></div>
-        <div
-          className="absolute top-2/3 right-1/5 w-3 h-3 bg-purple-500 rounded-full animate-pulse"
-          style={{ animationDelay: "0.5s" }}
-        ></div>
-        <div
-          className="absolute top-3/4 left-1/3 w-2 h-4 bg-red-400 rotate-12 animate-pulse"
-          style={{ animationDelay: "1.5s" }}
-        ></div>
-        <div
-          className="absolute top-1/5 right-1/6 w-3 h-3 bg-green-500 rotate-45 animate-pulse"
-          style={{ animationDelay: "2.5s" }}
-        ></div>
-
-        {/* Floating Stars */}
-        <div
-          className="absolute top-1/6 left-2/3 text-yellow-300 text-2xl animate-bounce"
-          style={{ animationDelay: "1s", animationDuration: "4s" }}
-        >
-          ⭐
-        </div>
-        <div
-          className="absolute top-2/5 right-1/8 text-yellow-200 text-xl animate-bounce"
-          style={{ animationDelay: "2s", animationDuration: "3.5s" }}
-        >
-          ✨
-        </div>
-        <div
-          className="absolute top-3/5 left-1/8 text-yellow-400 text-lg animate-bounce"
-          style={{ animationDelay: "0s", animationDuration: "4.5s" }}
-        >
-          ⭐
-        </div>
-        <div
-          className="absolute bottom-1/4 right-1/3 text-yellow-300 text-2xl animate-bounce"
-          style={{ animationDelay: "1.5s", animationDuration: "3s" }}
-        >
-          ✨
-        </div>
+      {/* Falling confetti */}
+      <div className="pointer-events-none absolute inset-0">
+        {confetti.map((p, i) => (
+          <span
+            key={i}
+            className="confetti absolute top-0 block"
+            style={{
+              left: `${p.left}%`,
+              width: p.size,
+              height: p.round ? p.size : p.size * 0.5,
+              background: p.color,
+              borderRadius: p.round ? "50%" : 2,
+              animationDelay: `${p.delay}s`,
+              animationDuration: `${p.duration}s`,
+            }}
+          />
+        ))}
       </div>
 
-      {/* Main Content */}
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 text-center">
-        <div className="mb-8 sm:mb-12">
-          <h1
-            className={`text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-white drop-shadow-2xl transition-all duration-1000 ease-out transform ${
-              showContent
-                ? "translate-y-0 opacity-100"
-                : "translate-y-16 opacity-0"
-            }`}
-            style={{
-              animation: showContent
-                ? "textRiseWithBurst 1.5s ease-out 0.5s both"
-                : "none",
-            }}
-          >
-            <span className="bg-gradient-to-r from-yellow-300 via-pink-300 to-purple-300 bg-clip-text text-transparent filter drop-shadow-lg animate-pulse">
-              Зодрӯзат Мубарак
-            </span>
-          </h1>
-          <div
-            className={`text-5xl sm:text-7xl md:text-8xl mt-4 transition-all duration-1000 ease-out transform ${
-              showContent
-                ? "translate-y-0 opacity-100"
-                : "translate-y-16 opacity-0"
-            }`}
-            style={{
-              animation: showContent
-                ? "textRiseWithBurst 1.5s ease-out 0.8s both, bounce 2s ease-in-out 2s infinite"
-                : "none",
-            }}
-          >
-            🎉
-          </div>
+      {/* Balloons */}
+      <div className="pointer-events-none absolute inset-0">
+        {BALLOONS.map((b, i) => (
+          <Balloon key={i} id={i} {...b} />
+        ))}
+      </div>
+
+      {/* Content */}
+      <main className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 text-center">
+        <div className="text-6xl sm:text-7xl" style={reveal(0.2)}>
+          <span className="inline-block animate-[wobble_3s_ease-in-out_infinite]">🎂</span>
         </div>
 
-        <div className="relative h-20 sm:h-24 md:h-28 flex items-center justify-center">
-          <h2
-            className={`text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white drop-shadow-xl transition-all duration-1000 ease-out transform ${
-              showContent
-                ? "translate-y-0 opacity-100 scale-100"
-                : "translate-y-16 opacity-0 scale-75"
-            }`}
-            style={{
-              animation: showContent
-                ? "textRiseWithBurst 1.5s ease-out 1.2s both"
-                : "none",
-            }}
-          >
-            <span className="bg-gradient-to-r from-pink-200 via-purple-200 to-indigo-200 bg-clip-text text-transparent">
-              {name}!
-            </span>
-          </h2>
-        </div>
+        <h1
+          className="mt-6 text-4xl font-extrabold tracking-tight sm:text-6xl md:text-7xl"
+          style={reveal(0.5)}
+        >
+          Зодрӯзат Мубарак
+        </h1>
+
+        <h2
+          className="shimmer mt-4 text-5xl font-extrabold sm:text-7xl md:text-8xl"
+          style={reveal(0.9)}
+        >
+          {name}!
+        </h2>
 
         <div
-          className={`mt-8 sm:mt-12 flex flex-wrap justify-center gap-4 text-2xl sm:text-3xl md:text-4xl transition-all duration-1000 ease-out transform ${
-            showContent
-              ? "translate-y-0 opacity-100"
-              : "translate-y-16 opacity-0"
-          }`}
-          style={{
-            animation: showContent
-              ? "textRiseWithBurst 1.5s ease-out 1.5s both"
-              : "none",
-          }}
+          className="mt-10 max-w-xl rounded-3xl border border-white/15 bg-white/10 px-6 py-5 shadow-2xl backdrop-blur-md sm:px-8 sm:py-6"
+          style={reveal(1.3)}
         >
-          <span className="animate-bounce" style={{ animationDelay: "2s" }}>
-            🎂
-          </span>
-          <span className="animate-bounce" style={{ animationDelay: "2.2s" }}>
-            🎈
-          </span>
-          <span className="animate-bounce" style={{ animationDelay: "2.4s" }}>
-            🎁
-          </span>
-          <span className="animate-bounce" style={{ animationDelay: "2.6s" }}>
-            🎊
-          </span>
-          <span className="animate-bounce" style={{ animationDelay: "2.8s" }}>
-            🥳
-          </span>
-        </div>
-
-        <div
-          className={`mt-8 sm:mt-12 max-w-2xl transition-all duration-1000 ease-out transform ${
-            showContent
-              ? "translate-y-0 opacity-100"
-              : "translate-y-16 opacity-0"
-          }`}
-          style={{
-            animation: showContent
-              ? "textRiseWithBurst 1.5s ease-out 1.8s both"
-              : "none",
-          }}
-        >
-          <p className="text-lg sm:text-xl md:text-2xl text-white/90 font-medium leading-relaxed drop-shadow-lg">
+          <p className="text-base leading-relaxed text-white/90 sm:text-lg md:text-xl">
             Умедворам, ки рӯзи махсуси шумо пур аз хушбахтӣ, ханда ва ҳама
             чизҳои дӯстдоштаатон бошад!
           </p>
         </div>
-      </div>
+      </main>
 
-      {/* Additional Floating Elements for Mobile */}
-      <div className="absolute inset-0 pointer-events-none">
-        {/* Mobile-optimized decorations */}
-        <div className="sm:hidden">
-          <div
-            className="absolute top-4 right-4 w-6 h-8 bg-gradient-to-b from-orange-400 to-orange-600 rounded-full animate-bounce"
-            style={{ animationDelay: "1.5s", animationDuration: "3s" }}
-          >
-            <div className="w-0.5 h-4 bg-gray-600 mx-auto"></div>
-          </div>
-          <div
-            className="absolute bottom-20 left-4 w-5 h-7 bg-gradient-to-b from-teal-400 to-teal-600 rounded-full animate-bounce"
-            style={{ animationDelay: "2.5s", animationDuration: "2.5s" }}
-          >
-            <div className="w-0.5 h-3 bg-gray-600 mx-auto"></div>
-          </div>
-        </div>
-
-        {/* Tablet and Desktop additional decorations */}
-        <div className="hidden sm:block">
-          <div
-            className="absolute bottom-32 right-20 w-8 h-11 bg-gradient-to-b from-cyan-400 to-cyan-600 rounded-full animate-bounce"
-            style={{ animationDelay: "3s", animationDuration: "3.2s" }}
-          >
-            <div className="w-1 h-6 bg-gray-600 mx-auto"></div>
-          </div>
-          <div
-            className="absolute bottom-40 left-20 w-7 h-10 bg-gradient-to-b from-rose-400 to-rose-600 rounded-full animate-bounce"
-            style={{ animationDelay: "1.8s", animationDuration: "2.7s" }}
-          >
-            <div className="w-1 h-5 bg-gray-600 mx-auto"></div>
-          </div>
-        </div>
-      </div>
-
-      {/* Sparkle Effects */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div
-          className="absolute top-1/4 left-1/4 w-1 h-1 bg-white rounded-full animate-ping"
-          style={{ animationDelay: "0s" }}
-        ></div>
-        <div
-          className="absolute top-1/3 right-1/3 w-1 h-1 bg-yellow-200 rounded-full animate-ping"
-          style={{ animationDelay: "1s" }}
-        ></div>
-        <div
-          className="absolute bottom-1/3 left-1/3 w-1 h-1 bg-pink-200 rounded-full animate-ping"
-          style={{ animationDelay: "2s" }}
-        ></div>
-        <div
-          className="absolute bottom-1/4 right-1/4 w-1 h-1 bg-purple-200 rounded-full animate-ping"
-          style={{ animationDelay: "3s" }}
-        ></div>
-      </div>
-
-      {/* Confetti Explosions */}
-      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-32 h-64">
-        {Array.from({ length: 30 }).map((_, i) => (
-          <div
-            key={`left-${i}`}
-            className={`absolute w-2 h-2 ${
-              i % 5 === 0
-                ? "bg-yellow-400"
-                : i % 5 === 1
-                ? "bg-pink-500"
-                : i % 5 === 2
-                ? "bg-blue-500"
-                : i % 5 === 3
-                ? "bg-green-500"
-                : "bg-purple-500"
-            } ${i % 3 === 0 ? "rounded-full" : i % 3 === 1 ? "rotate-45" : ""}`}
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animation: `confettiExplodeLeft 2s ease-out ${
-                Math.random() * 2
-              }s infinite`,
-              transform: `scale(${0.5 + Math.random() * 0.5})`,
-            }}
-          ></div>
-        ))}
-      </div>
-
-      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-32 h-64">
-        {Array.from({ length: 30 }).map((_, i) => (
-          <div
-            key={`right-${i}`}
-            className={`absolute w-2 h-2 ${
-              i % 5 === 0
-                ? "bg-red-400"
-                : i % 5 === 1
-                ? "bg-orange-500"
-                : i % 5 === 2
-                ? "bg-cyan-500"
-                : i % 5 === 3
-                ? "bg-lime-500"
-                : "bg-rose-500"
-            } ${i % 3 === 0 ? "rounded-full" : i % 3 === 1 ? "rotate-45" : ""}`}
-            style={{
-              right: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animation: `confettiExplodeRight 2s ease-out ${
-                Math.random() * 2
-              }s infinite`,
-              transform: `scale(${0.5 + Math.random() * 0.5})`,
-            }}
-          ></div>
-        ))}
-      </div>
-
-      {/* Keyframe Animations */}
-      <style jsx>{`
-        @keyframes confettiExplodeLeft {
-          0% {
-            transform: translateX(0) translateY(0) rotate(0deg) scale(0);
-            opacity: 1;
-          }
-          50% {
-            transform: translateX(-50px) translateY(-100px) rotate(180deg)
-              scale(1);
-            opacity: 1;
-          }
-          100% {
-            transform: translateX(-100px) translateY(200px) rotate(360deg)
-              scale(0.5);
-            opacity: 0;
-          }
+      <style jsx global>{`
+        @keyframes reveal {
+          from { opacity: 0; transform: translateY(32px) scale(0.96); filter: blur(6px); }
+          to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
         }
-
-        @keyframes confettiExplodeRight {
-          0% {
-            transform: translateX(0) translateY(0) rotate(0deg) scale(0);
-            opacity: 1;
-          }
-          50% {
-            transform: translateX(50px) translateY(-100px) rotate(-180deg)
-              scale(1);
-            opacity: 1;
-          }
-          100% {
-            transform: translateX(100px) translateY(200px) rotate(-360deg)
-              scale(0.5);
-            opacity: 0;
-          }
+        @keyframes rise {
+          from { transform: translateY(120vh); }
+          to { transform: translateY(0); }
         }
-
-        @keyframes textRiseWithBurst {
-          0% {
-            transform: translateY(100px) scale(0.8);
-            opacity: 0;
-          }
-          30% {
-            transform: translateY(-10px) scale(1.1);
-            opacity: 0.8;
-          }
-          60% {
-            transform: translateY(5px) scale(1.05);
-            opacity: 1;
-          }
-          100% {
-            transform: translateY(0) scale(1);
-            opacity: 1;
-          }
+        @keyframes sway {
+          0%, 100% { transform: translateY(0) rotate(-4deg); }
+          50% { transform: translateY(-14px) rotate(4deg); }
+        }
+        @keyframes fall {
+          0% { transform: translateY(-10vh) rotate(0deg); opacity: 0; }
+          10% { opacity: 0.9; }
+          100% { transform: translateY(110vh) rotate(540deg); opacity: 0.9; }
+        }
+        @keyframes wobble {
+          0%, 100% { transform: rotate(-8deg) scale(1); }
+          50% { transform: rotate(8deg) scale(1.1); }
+        }
+        @keyframes shimmer {
+          to { background-position: 200% center; }
+        }
+        .balloon-rise {
+          animation: rise 2.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .balloon-sway {
+          transform-origin: 50% 100%;
+          animation: sway 6s ease-in-out infinite;
+        }
+        .confetti {
+          animation: fall 9s linear infinite;
+        }
+        .shimmer {
+          background: linear-gradient(90deg, #ffe08a, #ff8fa3, #d2b6ff, #9fd4ff, #ffe08a);
+          background-size: 200% auto;
+          -webkit-background-clip: text;
+          background-clip: text;
+          color: transparent;
+          animation: reveal 1s cubic-bezier(.2,.8,.2,1) 0.9s both, shimmer 6s linear infinite;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .balloon-rise, .balloon-sway, .confetti, .shimmer { animation: none !important; }
         }
       `}</style>
     </div>
